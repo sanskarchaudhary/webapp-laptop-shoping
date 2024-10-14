@@ -1,0 +1,86 @@
+[
+  {
+    "id": 1,
+    "name": "Laptop Model 1",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 599.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Laptop Model 2",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 799.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Laptop Model 3",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 999.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  },
+  {
+    "id": 4,
+    "name": "Laptop Model 4",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 1199.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  },
+  {
+    "id": 5,
+    "name": "Laptop Model 5",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 1399.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  },
+  {
+    "id": 6,
+    "name": "Laptop Model 6",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 1599.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  },
+  {
+    "id": 7,
+    "name": "Laptop Model 7",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 1799.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  },
+  {
+    "id": 8,
+    "name": "Laptop Model 8",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 1999.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  },
+  {
+    "id": 9,
+    "name": "Laptop Model 9",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 2199.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  },
+  {
+    "id": 10,
+    "name": "Laptop Model 10",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 2399.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  },
+  {
+    "id": 11,
+    "name": "Laptop Model 11",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 2599.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  },
+  {
+    "id": 12,
+    "name": "Laptop Model 12",
+    "description": "Brief description of the laptop specifications and condition.",
+    "price": 2799.99,
+    "image": "https://content.paulreiffer.com/wp-content/uploads/2021/10/Review-Workstation-October-New-2021-Apple-M1-MacBook-Pro-16-14-inch-Max-Launch-Release-Paul-Reiffer-Testing-Photographer-Phase-One-Capture-One-Benchmark@2x.jpg"
+  }
+]
