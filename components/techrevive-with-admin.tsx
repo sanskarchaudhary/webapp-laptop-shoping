@@ -1413,7 +1413,7 @@ export function TechreviveWithAdmin() {
     const [customerName, setCustomerName] = useState("");
     const [address, setAddress] = useState("");
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit: React.MouseEventHandler<HTMLButtonElement> = async (e) => {
       e.preventDefault();
       const total = cartItems.reduce(
         (acc, item) => acc + item.price * item.quantity,
@@ -1612,7 +1612,7 @@ export function TechreviveWithAdmin() {
               </div>
             </div>
             <Button
-              onClick={handleSubmit} // Removed event as an argument
+              onClick={handleSubmit} // Now correctly typed
               className="w-full mt-6 bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 hover:from-green-500 hover:via-blue-600 hover:to-purple-700 text-white"
             >
               Place Order
