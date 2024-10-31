@@ -17,6 +17,7 @@ import {
   TrendingUp,
   PlusIcon,
   PencilIcon,
+  Laptop,
 } from "lucide-react";
 import {
   Dialog,
@@ -121,7 +122,7 @@ type Laptop = {
   sold: any;
 };
 
-export function TechreviveWithAdmin() {
+export default function TechreviveWithAdmin() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -133,6 +134,11 @@ export function TechreviveWithAdmin() {
   const [quickViewLaptop, setQuickViewLaptop] = useState<Laptop | null>(null);
   const [originalLaptops, setOriginalLaptops] = useState<Laptop[]>(laptops);
   const [error, setError] = useState<string | null>(null);
+  const [filteredLaptops, setFilteredLaptops] = useState<Laptop[]>([]);
+  const [userOrders, setUserOrders] = useState<Order[]>([]);
+  const [isEditAddressDialogOpen, setIsEditAddressDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [newAddress, setNewAddress] = useState('');
 
   const updateQuantity = (id: number, change: number) => {
     setCartItems((items) =>
@@ -146,31 +152,24 @@ export function TechreviveWithAdmin() {
     );
   };
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const ordersCollection = collection(db, "orders"); // Replace "orders" with your actual collection name
-        const ordersSnapshot = await getDocs(ordersCollection);
-        const ordersList = ordersSnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            firb_id: doc.id,
-            id: data.id,
-            customerName: data.customerName,
-            address: data.address,
-            items: data.items,
-            total: data.total,
-            status: data.status,
-            date: data.date, // Ensure this field exists in your Firestore documents
-          };
-        });
-        console.log(ordersList);
-        setOrders(ordersList);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
-      }
-    };
+  const fetchOrders = async () => {
+    const auth = firebaseGetAuth();
+    const userId = auth.currentUser?.uid;  // Get current user's ID
+    
+    if (!userId) return;  // Exit if no user ID
 
+    const ordersCollection = collection(db, "orders");
+    const q = query(
+      ordersCollection,
+      where("customer_id", "==", userId),
+      where("status", "in", ["wc-completed", "wc-processing"]) // Add desired order statuses
+    );
+    const querySnapshot = await getDocs(q);
+    const ordersData = querySnapshot.docs.map(doc => doc.data() as Order);
+    setOrders(ordersData);
+  };
+
+  useEffect(() => {
     fetchOrders();
   }, []);
 
@@ -195,6 +194,7 @@ export function TechreviveWithAdmin() {
           };
         });
         setLaptops(laptopsList);
+        setFilteredLaptops(laptopsList);
         setOriginalLaptops(laptopsList);
       } catch (error) {
         console.error("Error fetching laptops:", error);
@@ -475,6 +475,12 @@ export function TechreviveWithAdmin() {
               className="hover:text-purple-400 transition-colors"
             >
               About
+            </button>
+            <button
+              onClick={() => setCurrentPage("orders")}
+              className="hover:text-pink-400 transition-colors"
+            >
+              Orders
             </button>
             <button
               onClick={() => setCurrentPage("contact")}
@@ -1047,7 +1053,7 @@ export function TechreviveWithAdmin() {
     };
 
     // Clear button handler
-    const handleClearButton = () => {
+    const handleClearSearchButton = () => {
       setSearchLaptop(""); // Reset the search query
       setLaptops(originalLaptops); // Reset to original list
     };
@@ -1073,7 +1079,7 @@ export function TechreviveWithAdmin() {
 
               <Button
                 className="bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 hover:from-green-500 hover:via-blue-600 hover:to-purple-700 text-white"
-                onClick={searchLaptop ? handleSearchButton : handleClearButton}
+                onClick={searchLaptop ? handleSearchButton : handleClearSearchButton}
               >
                 {searchLaptop ? "Search" : "Clear"}
               </Button>
@@ -1149,6 +1155,9 @@ export function TechreviveWithAdmin() {
 
   const LaptopsPage = () => {
     const [searchLaptop, setSearchLaptop] = useState("");
+    const [selectedBrand, setSelectedBrand] = useState('all');
+    const [filteredLaptops, setFilteredLaptops] = useState<Laptop[]>([]);
+
 
     const handleSearchLaptop = (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearchLaptop(e.target.value);
@@ -1167,7 +1176,7 @@ export function TechreviveWithAdmin() {
     const handleSearchButton = () => {
       if (searchLaptop !== "") {
         const query = searchLaptop.toLowerCase();
-
+        
         // Filter the original list instead of the already filtered one
         const filteredLaptops = originalLaptops.filter((laptop) => {
           const name = laptop.name.toLowerCase();
@@ -1187,6 +1196,27 @@ export function TechreviveWithAdmin() {
       setLaptops(originalLaptops); // Reset to original list
     };
 
+    useEffect(() => {
+      let filtered = originalLaptops;
+      if (selectedBrand !== 'all') {
+        filtered = filtered.filter((laptop) => {
+          // Debugging: Log filtering process
+          if (selectedBrand.toLowerCase() === laptop.brand.toLowerCase()) {
+            console.log(laptop.brand);
+            return laptops;
+          }
+          return false;
+        });
+      }
+      setFilteredLaptops(filtered);
+    }, [selectedBrand, originalLaptops]);
+
+
+    const handleBrandChange = (value: string) => {
+      setSelectedBrand(value);
+    };
+
+    
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
@@ -1208,8 +1238,8 @@ export function TechreviveWithAdmin() {
             </Button>
           </div>
           <div className="flex space-x-2">
-            <Select>
-              <SelectTrigger className="w-[180px] bg-white/10 border-white/20 text-white">
+          <Select value={selectedBrand} onValueChange={handleBrandChange}>
+          <SelectTrigger className="w-[180px] bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Brand" />
               </SelectTrigger>
               <SelectContent>
@@ -1217,9 +1247,10 @@ export function TechreviveWithAdmin() {
                 <SelectItem value="dell">Dell</SelectItem>
                 <SelectItem value="hp">HP</SelectItem>
                 <SelectItem value="lenovo">Lenovo</SelectItem>
-                <SelectItem value="apple">Apple</SelectItem>
+                <SelectItem value="Apple">Apple</SelectItem>
               </SelectContent>
             </Select>
+            <button onClick={handleClearButton}>Clear</button>
             <Select>
               <SelectTrigger className="w-[180px] bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Price Range" />
@@ -2049,6 +2080,174 @@ export function TechreviveWithAdmin() {
       </div>
     );
   };
+
+  const OrdersPage = () => {
+    const [customerName, setCustomerName] = useState(""); // Add this line
+    
+    useEffect(() => {
+      // Get customer name from localStorage or context
+      const user = localStorage.getItem("user");
+      if (user) {
+        const userData = JSON.parse(user);
+        setCustomerName(userData.displayName || "");
+      }
+    }, []);
+
+    // Fetch user's orders when component mounts
+    useEffect(() => {
+      const fetchUserOrders = async () => {
+        try {
+          const ordersCollection = collection(db, "orders");
+          const q = query(ordersCollection, where("customerName", "==", customerName));
+          const querySnapshot = await getDocs(q);
+          const ordersData = querySnapshot.docs.map(doc => doc.data() as Order);
+          setUserOrders(ordersData);
+        } catch (error) {
+          console.error("Error fetching orders:", error);
+        }
+      };
+
+      fetchUserOrders();
+    }, [customerName]);
+
+    // Handle address update
+    const handleUpdateAddress = async () => {
+      if (!selectedOrder || !newAddress) return;
+
+      try {
+        const orderRef = doc(db, "orders", selectedOrder.id.toString());
+        await updateDoc(orderRef, {
+          address: newAddress
+        });
+
+        // Update local state
+        setUserOrders(prevOrders =>
+          prevOrders.map(order =>
+            order.id === selectedOrder.id
+              ? { ...order, address: newAddress }
+              : order
+          )
+        );
+
+        setIsEditAddressDialogOpen(false);
+        setNewAddress('');
+        setSelectedOrder(null);
+      } catch (error) {
+        console.error("Error updating address:", error);
+      }
+    };
+
+    // Handle order cancellation
+    const handleCancelOrder = async (order: Order) => {
+      if (order.status !== "pending") {
+        alert("Only pending orders can be cancelled");
+        return;
+      }
+
+      try {
+        const orderRef = doc(db, "orders", order.id.toString());
+        await deleteDoc(orderRef);
+        setUserOrders(prevOrders => prevOrders.filter(o => o.id !== order.id));
+      } catch (error) {
+        console.error("Error cancelling order:", error);
+      }
+    };
+
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
+          My Orders
+        </h1>
+        
+        <div className="space-y-6">
+          {userOrders.length === 0 ? (
+            <p className="text-center text-gray-400">No orders found</p>
+          ) : (
+            userOrders.map((order) => (
+              <div key={order.id} className="bg-white/5 rounded-lg p-6 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-semibold">Order #{order.id}</h2>
+                    <p className="text-sm text-gray-400">{order.date}</p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-sm ${
+                    order.status === 'delivered' ? 'bg-green-500/20 text-green-400' :
+                    order.status === 'shipped' ? 'bg-blue-500/20 text-blue-400' :
+                    'bg-yellow-500/20 text-yellow-400'
+                  }`}>
+                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <p><span className="text-gray-400">Delivery Address:</span> {order.address}</p>
+                  <p><span className="text-gray-400">Total Amount:</span> ₹{order.total.toFixed(2)}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Items:</h3>
+                  {order.items.map((item, index) => (
+                    <div key={index} className="flex justify-between items-center">
+                      <span>{item.name} x {item.quantity}</span>
+                      <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setNewAddress(order.address);
+                      setIsEditAddressDialogOpen(true);
+                    }}
+                    disabled={order.status !== "pending"}
+                  >
+                    Update Address
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleCancelOrder(order)}
+                    disabled={order.status !== "pending"}
+                  >
+                    Cancel Order
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <Dialog open={isEditAddressDialogOpen} onOpenChange={setIsEditAddressDialogOpen}>
+          <DialogContent className="sm:max-w-[425px] bg-black/80 backdrop-blur-xl text-white border border-white/20">
+            <DialogHeader>
+              <DialogTitle>Update Delivery Address</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>New Address</Label>
+                <Textarea
+                  value={newAddress}
+                  onChange={(e) => setNewAddress(e.target.value)}
+                  placeholder="Enter new delivery address"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-4">
+              <Button variant="ghost" onClick={() => setIsEditAddressDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateAddress}>
+                Update Address
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  };
+
   const [userRole, setUserRole] = useState<string>("user");
 
   return (
@@ -2060,6 +2259,7 @@ export function TechreviveWithAdmin() {
         {currentPage === "about" && <AboutPage />}
         {currentPage === "contact" && <ContactPage />}
         {currentPage === "checkout" && <CheckoutPage />}
+        {currentPage === "orders" && <OrdersPage />}
         {currentPage === "admin" && <AdminPage />}
       </main>
       <Footer />
@@ -2120,3 +2320,11 @@ function firebaseServerTimestamp() {
 function setAddress(arg0: string) {
   throw new Error("Function not implemented.");
 }
+function setSelectedBrand(value: string) {
+  throw new Error("Function not implemented.");
+}
+
+export const StaticComponent = () => {
+  // component code
+};
+
