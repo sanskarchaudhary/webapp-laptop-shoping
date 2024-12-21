@@ -135,10 +135,10 @@ export default function TechreviveWithAdmin() {
   const [originalLaptops, setOriginalLaptops] = useState<Laptop[]>(laptops);
   const [error, setError] = useState<string | null>(null);
   const [filteredLaptops, setFilteredLaptops] = useState<Laptop[]>([]);
-  const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [isEditAddressDialogOpen, setIsEditAddressDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [newAddress, setNewAddress] = useState('');
+  const [newAddress, setNewAddress] = useState("");
+  console.log("order page");
 
   const updateQuantity = (id: number, change: number) => {
     setCartItems((items) =>
@@ -151,12 +151,11 @@ export default function TechreviveWithAdmin() {
         .filter((item) => item.quantity > 0)
     );
   };
-
   const fetchOrders = async () => {
     const auth = firebaseGetAuth();
-    const userId = auth.currentUser?.uid;  // Get current user's ID
-    
-    if (!userId) return;  // Exit if no user ID
+    const userId = auth.currentUser?.uid; // Get current user's ID
+
+    if (!userId) return; // Exit if no user ID
 
     const ordersCollection = collection(db, "orders");
     const q = query(
@@ -165,10 +164,9 @@ export default function TechreviveWithAdmin() {
       where("status", "in", ["wc-completed", "wc-processing"]) // Add desired order statuses
     );
     const querySnapshot = await getDocs(q);
-    const ordersData = querySnapshot.docs.map(doc => doc.data() as Order);
+    const ordersData = querySnapshot.docs.map((doc) => doc.data() as Order);
     setOrders(ordersData);
   };
-
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -429,6 +427,8 @@ export default function TechreviveWithAdmin() {
     }
 
     useEffect(() => {
+      console.log("render");
+
       const user = localStorage.getItem("user");
       if (user) {
         setCurrentUser(JSON.parse(user));
@@ -1079,7 +1079,9 @@ export default function TechreviveWithAdmin() {
 
               <Button
                 className="bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 hover:from-green-500 hover:via-blue-600 hover:to-purple-700 text-white"
-                onClick={searchLaptop ? handleSearchButton : handleClearSearchButton}
+                onClick={
+                  searchLaptop ? handleSearchButton : handleClearSearchButton
+                }
               >
                 {searchLaptop ? "Search" : "Clear"}
               </Button>
@@ -1155,9 +1157,8 @@ export default function TechreviveWithAdmin() {
 
   const LaptopsPage = () => {
     const [searchLaptop, setSearchLaptop] = useState("");
-    const [selectedBrand, setSelectedBrand] = useState('all');
+    const [selectedBrand, setSelectedBrand] = useState("all");
     const [filteredLaptops, setFilteredLaptops] = useState<Laptop[]>([]);
-
 
     const handleSearchLaptop = (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearchLaptop(e.target.value);
@@ -1176,7 +1177,7 @@ export default function TechreviveWithAdmin() {
     const handleSearchButton = () => {
       if (searchLaptop !== "") {
         const query = searchLaptop.toLowerCase();
-        
+
         // Filter the original list instead of the already filtered one
         const filteredLaptops = originalLaptops.filter((laptop) => {
           const name = laptop.name.toLowerCase();
@@ -1198,7 +1199,7 @@ export default function TechreviveWithAdmin() {
 
     useEffect(() => {
       let filtered = originalLaptops;
-      if (selectedBrand !== 'all') {
+      if (selectedBrand !== "all") {
         filtered = filtered.filter((laptop) => {
           // Debugging: Log filtering process
           if (selectedBrand.toLowerCase() === laptop.brand.toLowerCase()) {
@@ -1211,12 +1212,10 @@ export default function TechreviveWithAdmin() {
       setFilteredLaptops(filtered);
     }, [selectedBrand, originalLaptops]);
 
-
     const handleBrandChange = (value: string) => {
       setSelectedBrand(value);
     };
 
-    
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
@@ -1238,8 +1237,8 @@ export default function TechreviveWithAdmin() {
             </Button>
           </div>
           <div className="flex space-x-2">
-          <Select value={selectedBrand} onValueChange={handleBrandChange}>
-          <SelectTrigger className="w-[180px] bg-white/10 border-white/20 text-white">
+            <Select value={selectedBrand} onValueChange={handleBrandChange}>
+              <SelectTrigger className="w-[180px] bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Brand" />
               </SelectTrigger>
               <SelectContent>
@@ -1444,7 +1443,9 @@ export default function TechreviveWithAdmin() {
     const [customerName, setCustomerName] = useState("");
     const [address, setAddress] = useState("");
 
-    const handleSubmit: React.MouseEventHandler<HTMLButtonElement> = async (e) => {
+    const handleSubmit: React.MouseEventHandler<HTMLButtonElement> = async (
+      e
+    ) => {
       e.preventDefault();
       const total = cartItems.reduce(
         (acc, item) => acc + item.price * item.quantity,
@@ -1453,9 +1454,12 @@ export default function TechreviveWithAdmin() {
 
       const ordersCollection = collection(db, "orders");
       const ordersSnapshot = await getDocs(ordersCollection);
-      
+
       // Debugging: Log the fetched order data
-      console.log("Fetched Orders Data:", ordersSnapshot.docs.map(doc => doc.data()));
+      console.log(
+        "Fetched Orders Data:",
+        ordersSnapshot.docs.map((doc) => doc.data())
+      );
 
       const existingOrders = ordersSnapshot.docs.map((doc) => {
         const data = doc.data();
@@ -1467,7 +1471,10 @@ export default function TechreviveWithAdmin() {
       // Debugging: Log existing orders
       console.log("Existing Orders:", existingOrders);
 
-      const maxId = existingOrders.length > 0 ? Math.max(...existingOrders.map(order => order.id)) : 0;
+      const maxId =
+        existingOrders.length > 0
+          ? Math.max(...existingOrders.map((order) => order.id))
+          : 0;
 
       // Debugging: Log the maximum ID
       console.log("Max ID:", maxId);
@@ -1489,28 +1496,29 @@ export default function TechreviveWithAdmin() {
         console.log("Order placed successfully");
 
         // Update revenue, sold count, and stock
-        const updatedLaptops = await Promise.all(cartItems.map(async (item) => {
-          const laptopRef = doc(db, "laptops", item.id.toString());
-          const laptopSnap = await getDoc(laptopRef);
-          if (laptopSnap.exists()) {
-            const laptopData = laptopSnap.data() as Laptop;
-            const updatedStock = laptopData.stock - item.quantity;
-            const updatedSold = laptopData.sold + item.quantity;
+        const updatedLaptops = await Promise.all(
+          cartItems.map(async (item) => {
+            const laptopRef = doc(db, "laptops", item.id.toString());
+            const laptopSnap = await getDoc(laptopRef);
+            if (laptopSnap.exists()) {
+              const laptopData = laptopSnap.data() as Laptop;
+              const updatedStock = laptopData.stock - item.quantity;
+              const updatedSold = laptopData.sold + item.quantity;
 
-            // Update the laptop document in Firestore
-            await updateDoc(laptopRef, {
-              stock: updatedStock,
-              sold: updatedSold,
-            });
+              // Update the laptop document in Firestore
+              await updateDoc(laptopRef, {
+                stock: updatedStock,
+                sold: updatedSold,
+              });
 
-            return { ...laptopData, stock: updatedStock, sold: updatedSold };
-          }
-          return null;
-        }));
+              return { ...laptopData, stock: updatedStock, sold: updatedSold };
+            }
+            return null;
+          })
+        );
 
         // Update local state for laptops
         setLaptops(updatedLaptops.filter(Boolean) as Laptop[]);
-
       } catch (error) {
         console.error("Error adding order: ", error);
       }
@@ -1631,7 +1639,7 @@ export default function TechreviveWithAdmin() {
                   className="flex justify-between items-center"
                 >
                   <span>
-                    {item.name} x {item.quantity} 
+                    {item.name} x {item.quantity}
                   </span>
                   <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
@@ -1780,9 +1788,29 @@ export default function TechreviveWithAdmin() {
       setSelectedTab(tabValue);
     };
 
+    useEffect(() => {
+      const fetchUserOrders = async () => {
+        try {          
+          const ordersCollection = collection(db, "orders");
+          const q = query(
+            ordersCollection,
+          );
+          const querySnapshot = await getDocs(q);
+          const ordersData = querySnapshot.docs.map(
+            (doc) => doc.data() as Order
+          );
+          console.log(ordersData);
+        } catch (error) {
+          console.error("Error fetching orders:", error);
+        }
+      };
+
+      fetchUserOrders();
+    });
     const totalRevenue = getTotalRevenue();
     const totalSold = getTotalSold();
     const totalStock = getTotalStock();
+    console.log(orders);
 
     const safeTotalRevenue = isNaN(totalRevenue)
       ? "N/A"
@@ -1910,17 +1938,25 @@ export default function TechreviveWithAdmin() {
                 <h2 className="text-2xl font-semibold">Manage Orders</h2>
                 <Button
                   onClick={() => {
-                    const data = orders.map(order => ({
+                    const data = orders.map((order) => ({
                       OrderID: order.id,
-                      Product: order.items.map(item => item.name).join(', '),
+                      Product: order.items.map((item) => item.name).join(", "),
                       Customer: order.customerName,
                       Address: order.address,
                       Total: order.total,
                       Status: order.status,
                       Date: order.date,
                     }));
-                    const csvContent = "sep=,\r\n" + Object.keys(data[0]).join(",") + "\r\n" + data.map(row => Object.values(row).join(",")).join("\r\n");
-                    const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+                    const csvContent =
+                      "sep=,\r\n" +
+                      Object.keys(data[0]).join(",") +
+                      "\r\n" +
+                      data
+                        .map((row) => Object.values(row).join(","))
+                        .join("\r\n");
+                    const blob = new Blob([csvContent], {
+                      type: "application/vnd.ms-excel;charset=utf-8;",
+                    });
                     const link = document.createElement("a");
                     const url = URL.createObjectURL(blob);
                     link.setAttribute("href", url);
@@ -1950,43 +1986,47 @@ export default function TechreviveWithAdmin() {
                   {orders
                     .sort((a, b) => a.id - b.id)
                     .map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell>{order.id}</TableCell>
-                      <TableCell>{order.items.map(item => item.name).join(', ')}</TableCell>
-                      <TableCell>{order.customerName}</TableCell>
-                      <TableCell>{order.address}</TableCell>
-                      <TableCell>₹{order.total}</TableCell>
-                      <TableCell>{order.status}</TableCell>
-                      <TableCell>{order.date}</TableCell>
-                      <TableCell>
-                        <Select
-                          onValueChange={(value) =>
-                            updateOrderStatus(
-                              order.id,
-                              value as "pending" | "shipped" | "delivered"
-                            )
-                          }
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Update Status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="shipped">Shipped</SelectItem>
-                            <SelectItem value="delivered">Delivered</SelectItem>
-                          </SelectContent>
-                        </Select><br/>
-                        <Button
+                      <TableRow key={order.id}>
+                        <TableCell>{order.id}</TableCell>
+                        <TableCell>
+                          {order.items.map((item) => item.name).join(", ")}
+                        </TableCell>
+                        <TableCell>{order.customerName}</TableCell>
+                        <TableCell>{order.address}</TableCell>
+                        <TableCell>₹{order.total}</TableCell>
+                        <TableCell>{order.status}</TableCell>
+                        <TableCell>{order.date}</TableCell>
+                        <TableCell>
+                          <Select
+                            onValueChange={(value) =>
+                              updateOrderStatus(
+                                order.id,
+                                value as "pending" | "shipped" | "delivered"
+                              )
+                            }
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue placeholder="Update Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="shipped">Shipped</SelectItem>
+                              <SelectItem value="delivered">
+                                Delivered
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <br />
+                          <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteOrder(order)}
                           >
                             <Trash className="h-4 w-4" />
                           </Button>
-                        
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </TabsContent>
@@ -2083,7 +2123,8 @@ export default function TechreviveWithAdmin() {
 
   const OrdersPage = () => {
     const [customerName, setCustomerName] = useState(""); // Add this line
-    
+    const [userOrders, setUserOrders] = useState<Order[]>([]);
+
     useEffect(() => {
       // Get customer name from localStorage or context
       const user = localStorage.getItem("user");
@@ -2091,16 +2132,22 @@ export default function TechreviveWithAdmin() {
         const userData = JSON.parse(user);
         setCustomerName(userData.displayName || "");
       }
-    }, []);
+    }, [customerName]);
 
     // Fetch user's orders when component mounts
+
     useEffect(() => {
       const fetchUserOrders = async () => {
-        try {
+        try {          
           const ordersCollection = collection(db, "orders");
-          const q = query(ordersCollection, where("customerName", "==", customerName));
+          const q = query(
+            ordersCollection,
+          );
           const querySnapshot = await getDocs(q);
-          const ordersData = querySnapshot.docs.map(doc => doc.data() as Order);
+          const ordersData = querySnapshot.docs.map(
+            (doc) => doc.data() as Order
+          );
+          console.log(ordersData);
           setUserOrders(ordersData);
         } catch (error) {
           console.error("Error fetching orders:", error);
@@ -2117,12 +2164,12 @@ export default function TechreviveWithAdmin() {
       try {
         const orderRef = doc(db, "orders", selectedOrder.id.toString());
         await updateDoc(orderRef, {
-          address: newAddress
+          address: newAddress,
         });
 
         // Update local state
-        setUserOrders(prevOrders =>
-          prevOrders.map(order =>
+        setUserOrders((prevOrders) =>
+          prevOrders.map((order) =>
             order.id === selectedOrder.id
               ? { ...order, address: newAddress }
               : order
@@ -2130,7 +2177,7 @@ export default function TechreviveWithAdmin() {
         );
 
         setIsEditAddressDialogOpen(false);
-        setNewAddress('');
+        setNewAddress("");
         setSelectedOrder(null);
       } catch (error) {
         console.error("Error updating address:", error);
@@ -2147,7 +2194,9 @@ export default function TechreviveWithAdmin() {
       try {
         const orderRef = doc(db, "orders", order.id.toString());
         await deleteDoc(orderRef);
-        setUserOrders(prevOrders => prevOrders.filter(o => o.id !== order.id));
+        setUserOrders((prevOrders) =>
+          prevOrders.filter((o) => o.id !== order.id)
+        );
       } catch (error) {
         console.error("Error cancelling order:", error);
       }
@@ -2158,37 +2207,56 @@ export default function TechreviveWithAdmin() {
         <h1 className="text-3xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
           My Orders
         </h1>
-        
+
         <div className="space-y-6">
           {userOrders.length === 0 ? (
             <p className="text-center text-gray-400">No orders found</p>
           ) : (
             userOrders.map((order) => (
-              <div key={order.id} className="bg-white/5 rounded-lg p-6 space-y-4">
+              <div
+                key={order.id}
+                className="bg-white/5 rounded-lg p-6 space-y-4"
+              >
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-xl font-semibold">Order #{order.id}</h2>
                     <p className="text-sm text-gray-400">{order.date}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm ${
-                    order.status === 'delivered' ? 'bg-green-500/20 text-green-400' :
-                    order.status === 'shipped' ? 'bg-blue-500/20 text-blue-400' :
-                    'bg-yellow-500/20 text-yellow-400'
-                  }`}>
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm ${
+                      order.status === "delivered"
+                        ? "bg-green-500/20 text-green-400"
+                        : order.status === "shipped"
+                        ? "bg-blue-500/20 text-blue-400"
+                        : "bg-yellow-500/20 text-yellow-400"
+                    }`}
+                  >
+                    {order.status.charAt(0).toUpperCase() +
+                      order.status.slice(1)}
                   </span>
                 </div>
 
                 <div className="space-y-2">
-                  <p><span className="text-gray-400">Delivery Address:</span> {order.address}</p>
-                  <p><span className="text-gray-400">Total Amount:</span> ₹{order.total.toFixed(2)}</p>
+                  <p>
+                    <span className="text-gray-400">Delivery Address:</span>{" "}
+                    {order.address}
+                  </p>
+                  <p>
+                    <span className="text-gray-400">Total Amount:</span> ₹
+                    {order.total.toFixed(2)}
+                  </p>
                 </div>
 
                 <div className="space-y-2">
                   <h3 className="font-semibold">Items:</h3>
                   {order.items.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span>{item.name} x {item.quantity}</span>
+                    <div
+                      key={index}
+                      className="flex justify-between items-center"
+                    >
+                      <span>
+                        {item.name} x {item.quantity}
+                      </span>
                       <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
@@ -2219,7 +2287,10 @@ export default function TechreviveWithAdmin() {
           )}
         </div>
 
-        <Dialog open={isEditAddressDialogOpen} onOpenChange={setIsEditAddressDialogOpen}>
+        <Dialog
+          open={isEditAddressDialogOpen}
+          onOpenChange={setIsEditAddressDialogOpen}
+        >
           <DialogContent className="sm:max-w-[425px] bg-black/80 backdrop-blur-xl text-white border border-white/20">
             <DialogHeader>
               <DialogTitle>Update Delivery Address</DialogTitle>
@@ -2235,12 +2306,13 @@ export default function TechreviveWithAdmin() {
               </div>
             </div>
             <div className="flex justify-end gap-4">
-              <Button variant="ghost" onClick={() => setIsEditAddressDialogOpen(false)}>
+              <Button
+                variant="ghost"
+                onClick={() => setIsEditAddressDialogOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleUpdateAddress}>
-                Update Address
-              </Button>
+              <Button onClick={handleUpdateAddress}>Update Address</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -2327,4 +2399,3 @@ function setSelectedBrand(value: string) {
 export const StaticComponent = () => {
   // component code
 };
-
