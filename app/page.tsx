@@ -4,7 +4,6 @@ import { LaptopButton } from "@/components/LaptopButton"; // Adjusted the import
 import { LaptopDetails } from "@/components/LaptopDetails";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React, { useState, useEffect } from "react";
-import { Home } from 'lucide-react';
 
 export default function Page() {
   const laptop = { /* define your laptop object here */ };
@@ -30,7 +29,6 @@ export default function Page() {
           <h1></h1>
           <LaptopButton laptop={LaptopDetails} />
           <Routes>
-            <Route path="/" element={<Home />} />
             <Route path="/laptop-details" element={<LaptopDetails />} />
           </Routes>
         </Router>
