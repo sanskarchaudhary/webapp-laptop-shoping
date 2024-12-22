@@ -1216,6 +1216,7 @@ export default function TechreviveWithAdmin() {
   const LaptopsPage = () => {
     const [searchLaptop, setSearchLaptop] = useState("");
     const [selectedBrand, setSelectedBrand] = useState("all");
+    const [selectedPriceRange, setSelectedPriceRange] = useState("all");
     const [filteredLaptops, setFilteredLaptops] = useState<Laptop[]>([]);
 
     const handleSearchLaptop = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1257,21 +1258,34 @@ export default function TechreviveWithAdmin() {
 
     useEffect(() => {
       let filtered = originalLaptops;
+
       if (selectedBrand !== "all") {
+        filtered = filtered.filter(
+          (laptop) => selectedBrand.toLowerCase() === laptop.brand.toLowerCase()
+        );
+      }
+
+      if (selectedPriceRange !== "all") {
         filtered = filtered.filter((laptop) => {
-          // Debugging: Log filtering process
-          if (selectedBrand.toLowerCase() === laptop.brand.toLowerCase()) {
-            console.log(laptop.brand);
-            return laptops;
-          }
-          return false;
+          const price = laptop.price || 0;
+          if (selectedPriceRange === "0-50000")
+            return price >= 0 && price <= 50000;
+          if (selectedPriceRange === "50000-100000")
+            return price > 50000 && price <= 100000;
+          if (selectedPriceRange === "100000+") return price > 100000;
+          return true;
         });
       }
+
       setFilteredLaptops(filtered);
-    }, [selectedBrand, originalLaptops]);
+    }, [selectedBrand, selectedPriceRange, originalLaptops]);
 
     const handleBrandChange = (value: string) => {
       setSelectedBrand(value);
+    };
+
+    const handlePriceRangeChange = (value: string) => {
+      setSelectedPriceRange(value);
     };
 
     return (
@@ -1308,27 +1322,29 @@ export default function TechreviveWithAdmin() {
               </SelectContent>
             </Select>
             <button onClick={handleClearButton}>Clear</button>
-            <Select>
+            <Select
+              value={selectedPriceRange}
+              onValueChange={handlePriceRangeChange}
+            >
               <SelectTrigger className="w-[180px] bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Price Range" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Prices</SelectItem>
-                <SelectItem value="0-500">$0 - $500</SelectItem>
-                <SelectItem value="500-1000">$500 - $1000</SelectItem>
-                <SelectItem value="1000+">$1000+</SelectItem>
+                <SelectItem value="0-50000">₹0 - ₹50000</SelectItem>
+                <SelectItem value="50000-100000">₹50000 - ₹100000</SelectItem>
+                <SelectItem value="100000+">₹100000+</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {laptops.map((laptop) => (
+          {filteredLaptops.map((laptop) => (
             <div
               key={laptop.id}
               className="bg-black/40 backdrop-blur-md rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/30 group"
             >
               <div className="relative overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={laptop.image}
                   alt={laptop.name}
