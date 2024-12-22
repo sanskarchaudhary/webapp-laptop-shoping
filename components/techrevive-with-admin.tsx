@@ -1493,16 +1493,17 @@ export default function TechreviveWithAdmin() {
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [customerName, setCustomerName] = useState("");
     const [address, setAddress] = useState("");
-const [userData, setUserData] = useState({
-  name: "",
-  email: "",
-  phone: "",
-  address: "",
-  city: "",
-  state: "",
-  zipCode: "",
-  location: "",
-});
+    const [userData, setUserData] = useState({
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      location: "",
+    });
+
     const handleSubmit: React.MouseEventHandler<HTMLButtonElement> = async (
       e
     ) => {
@@ -1540,9 +1541,9 @@ const [userData, setUserData] = useState({
       console.log("Max ID:", maxId);
 
       const newOrder: Order = {
-        id: (maxId + 1).toString(), // Convert number to string
-        customerName: customerName,
-        address: address,
+        id: (maxId + 1).toString(), // Unique ID
+        customerName: userData.name,
+        address: `${userData.address}, ${userData.city}, ${userData.state} ${userData.zipCode}`,
         items: cartItems,
         total: total,
         status: "pending",
@@ -1555,30 +1556,35 @@ const [userData, setUserData] = useState({
         await setDoc(orderRef, newOrder);
         console.log("Order placed successfully");
 
-        // Update revenue, sold count, and stock
-        const updatedLaptops = await Promise.all(
+        // Update stock and sold counts
+        await Promise.all(
           cartItems.map(async (item) => {
             const laptopRef = doc(db, "laptops", item.id.toString());
             const laptopSnap = await getDoc(laptopRef);
+
             if (laptopSnap.exists()) {
               const laptopData = laptopSnap.data() as Laptop;
-              const updatedStock = laptopData.stock - item.quantity;
-              const updatedSold = laptopData.sold + item.quantity;
-
-              // Update the laptop document in Firestore
               await updateDoc(laptopRef, {
-                stock: updatedStock,
-                sold: updatedSold,
+                stock: laptopData.stock - item.quantity,
+                sold: laptopData.sold + item.quantity,
               });
-
-              return { ...laptopData, stock: updatedStock, sold: updatedSold };
             }
-            return null;
           })
         );
 
         // Update local state for laptops
-        setLaptops(updatedLaptops.filter(Boolean) as Laptop[]);
+        const updatedLaptops = laptops.map((laptop) => {
+          const cartItem = cartItems.find((item) => item.id === laptop.id);
+          if (cartItem) {
+            return {
+              ...laptop,
+              stock: laptop.stock - cartItem.quantity,
+              sold: laptop.sold + cartItem.quantity,
+            };
+          }
+          return laptop;
+        });
+        setLaptops(updatedLaptops);
       } catch (error) {
         console.error("Error adding order: ", error);
       }
@@ -1586,44 +1592,44 @@ const [userData, setUserData] = useState({
       setCustomerName("");
       setAddress("");
     };
-  useEffect(() => {
-    // Get user data from localStorage
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      setUserData((prev) => ({
-        ...prev,
-        name: user.displayName || "",
-        email: user.email || "",
-      }));
-    }
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          const response = await fetch(
-            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=bf51ba192eef4f9ba8fe27c54ddedb65`
-          );
-          const data = await response.json();
-          const result = data.results[0];
+    useEffect(() => {
+      // Get user data from localStorage
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        setUserData((prev) => ({
+          ...prev,
+          name: user.displayName || "",
+          email: user.email || "",
+        }));
+      }
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const response = await fetch(
+              `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=bf51ba192eef4f9ba8fe27c54ddedb65`
+            );
+            const data = await response.json();
+            const result = data.results[0];
 
-          if (result) {
-            const components = result.components;
-            setUserData((prev) => ({
-              ...prev,
-              address: components.road || "",
-              city: components.city || "",
-              state: components.state || "",
-              zipCode: components.postcode || "",
-              location: result.formatted,
-            }));
+            if (result) {
+              const components = result.components;
+              setUserData((prev) => ({
+                ...prev,
+                address: components.road || "",
+                city: components.city || "",
+                state: components.state || "",
+                zipCode: components.postcode || "",
+                location: result.formatted,
+              }));
+            }
+          } catch (error) {
+            console.error("Error getting location details:", error);
           }
-        } catch (error) {
-          console.error("Error getting location details:", error);
-        }
-      });
-    }
-  }, []);
+        });
+      }
+    }, []);
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
@@ -1965,363 +1971,388 @@ const [userData, setUserData] = useState({
     const safeTotalStock = isNaN(totalStock) ? "N/A" : totalStock.toString();
 
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
-          Admin Panel
-        </h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Revenue
-              </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{safeTotalRevenue} </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Laptops Sold
-              </CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{safeTotalSold}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Stock</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{safeTotalStock}</div>
-            </CardContent>
-          </Card>
-        </div>
-        <Tabs defaultValue={selectedTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger
-              value="laptops"
-              onClick={() => handleTabSwitch("laptops")}
-            >
-              Laptops
-            </TabsTrigger>
-            <TabsTrigger
-              value="orders"
-              onClick={() => handleTabSwitch("orders")}
-            >
-              Orders
-            </TabsTrigger>
-          </TabsList>
-          {selectedTab === "laptops" && (
-            <TabsContent value="laptops" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-semibold">Manage Laptops</h2>
-                <Button
-                  onClick={() => setIsAdminDialogOpen(true)}
-                  className="bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 hover:from-green-500 hover:via-blue-600 hover:to-purple-700 text-white"
-                >
-                  Add New Laptop
-                </Button>
-              </div>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">ID</TableHead>
-                      <TableHead className="min-w-[200px]">Product</TableHead>
-                      <TableHead className="min-w-[150px]">
-                        Description
-                      </TableHead>
-                      <TableHead className="min-w-[200px]">Price</TableHead>
-                      <TableHead className="min-w-[100px]">Brand</TableHead>
-                      <TableHead className="min-w-[100px]">Stock</TableHead>
-                      <TableHead className="min-w-[150px]">Sold</TableHead>
-                      <TableHead className="min-w-[200px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {laptops
-                      .sort((a, b) => a.id - b.id)
-                      .map((laptop) => (
-                        <TableRow key={laptop.id}>
-                          <TableCell>{laptop.id}</TableCell>
-                          <TableCell>{laptop.name}</TableCell>
-                          <TableCell>{laptop.description}</TableCell>
-                          <TableCell>
-                            {" "}
-                            {laptop.price ? laptop.price.toFixed(2) : "N/A"}
-                          </TableCell>
-                          <TableCell>{laptop.brand}</TableCell>
-                          <TableCell>{laptop.stock}</TableCell>
-                          <TableCell>{laptop.sold}</TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditLaptop(laptop)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteLaptop(laptop)}
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
-          )}
-          {selectedTab === "orders" && (
-            <TabsContent value="orders" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-semibold">Manage Orders</h2>
-                <Button
-                  onClick={() => {
-                    const data = orders.map((orders) => ({
-                      OrderID: orders.id,
-                      Product: orders.items.map((item) => item.name).join(", "),
-                      Customer: orders.customerName,
-                      Address: orders.address,
-                      Total: orders.total,
-                      Status: orders.status,
-                      Date: orders.date,
-                    }));
-                    const csvContent =
-                      "sep=,\r\n" +
-                      Object.keys(data[0]).join(",") +
-                      "\r\n" +
-                      data
-                        .map((row) => Object.values(row).join(","))
-                        .join("\r\n");
-                    const blob = new Blob([csvContent], {
-                      type: "application/vnd.ms-excel;charset=utf-8;",
-                    });
-                    const link = document.createElement("a");
-                    const url = URL.createObjectURL(blob);
-                    link.setAttribute("href", url);
-                    link.setAttribute("download", "orders.xls");
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  }}
-                >
-                  Download Orders Data
-                </Button>
-              </div>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]">ID</TableHead>
-                      <TableHead className="min-w-[200px]">Product</TableHead>
-                      <TableHead className="min-w-[150px]">Customer</TableHead>
-                      <TableHead className="min-w-[200px]">Address</TableHead>
-                      <TableHead className="min-w-[100px]">Total</TableHead>
-                      <TableHead className="min-w-[100px]">Status</TableHead>
-                      <TableHead className="min-w-[150px]">Date</TableHead>
-                      <TableHead className="min-w-[200px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders && orders.length > 0 ? (
-                      orders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell>{order.id}</TableCell>
-                          <TableCell>
-                            {order.items?.map((item) => item.name).join(", ") ||
-                              "No items"}
-                          </TableCell>
-                          <TableCell>{order.customerName || "N/A"}</TableCell>
-                          <TableCell>{order.address || "N/A"}</TableCell>
-                          <TableCell>
-                            ₹{order.total?.toFixed(2) || "0.00"}
-                          </TableCell>
-                          <TableCell>
-                            <span
-                              className={`capitalize ${
-                                order.status === "delivered"
-                                  ? "text-green-500"
-                                  : order.status === "shipped"
-                                  ? "text-blue-500"
-                                  : "text-yellow-500"
-                              }`}
-                            >
-                              {order.status || "pending"}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            {new Date(order.date).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              onValueChange={(value) =>
-                                updateOrderStatus(
-                                  order.id.toString(),
-                                  value as "pending" | "shipped" | "delivered"
-                                )
-                              }
-                            >
-                              <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Update Status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="shipped">Shipped</SelectItem>
-                                <SelectItem value="delivered">
-                                  Delivered
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteOrder(order)}
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center">
-                          No orders found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </TabsContent>
-          )}
-        </Tabs>
-
-        <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
-          <DialogContent className="sm:max-w-[425px] bg-black/80 backdrop-blur-xl text-white border border-white/20">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
-                {editingLaptop ? "Edit Laptop" : "Add New Laptop"}
-              </DialogTitle>
-            </DialogHeader>
-            <form
-              onSubmit={editingLaptop ? handleUpdateLaptop : handleAddLaptop}
-              className="space-y-4"
-            >
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  defaultValue={editingLaptop?.name}
-                  className="bg-white/10 border-white/20 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  defaultValue={editingLaptop?.description}
-                  className="bg-white/10 border-white/20 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="price">Price</Label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  step="0.01"
-                  defaultValue={editingLaptop?.price}
-                  className="bg-white/10 border-white/20 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="brand">Brand</Label>
-                <Input
-                  id="brand"
-                  name="brand"
-                  defaultValue={editingLaptop?.brand}
-                  className="bg-white/10 border-white/20 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="stock">Stock</Label>
-                <Input
-                  id="stock"
-                  name="stock"
-                  type="number"
-                  defaultValue={editingLaptop?.stock}
-                  className="bg-white/10 border-white/20 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="image">Image</Label>
-                <Input
-                  id="image"
-                  name="image"
-                  type="string"
-                  defaultValue={editingLaptop?.image}
-                  className="bg-white/10 border-white/20 text-white"
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 hover:from-green-500 hover:via-blue-600 hover:to-purple-700 text-white"
+      <>
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-3xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
+            Admin Panel
+          </h1>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Total Revenue
+                </CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{safeTotalRevenue} </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Laptops Sold
+                </CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{safeTotalSold}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Total Stock
+                </CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{safeTotalStock}</div>
+              </CardContent>
+            </Card>
+          </div>
+          <Tabs defaultValue={selectedTab} className="space-y-4">
+            <TabsList>
+              <TabsTrigger
+                value="laptops"
+                onClick={() => handleTabSwitch("laptops")}
               >
-                {editingLaptop ? "Update Laptop" : "Add Laptop"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+                Laptops
+              </TabsTrigger>
+              <TabsTrigger
+                value="orders"
+                onClick={() => handleTabSwitch("orders")}
+              >
+                Orders
+              </TabsTrigger>
+            </TabsList>
+            {selectedTab === "laptops" && (
+              <TabsContent value="laptops" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-semibold">Manage Laptops</h2>
+                  <Button
+                    onClick={() => setIsAdminDialogOpen(true)}
+                    className="bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 hover:from-green-500 hover:via-blue-600 hover:to-purple-700 text-white"
+                  >
+                    Add New Laptop
+                  </Button>
+                </div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[50px]">ID</TableHead>
+                        <TableHead className="min-w-[200px]">Product</TableHead>
+                        <TableHead className="min-w-[150px]">
+                          Description
+                        </TableHead>
+                        <TableHead className="min-w-[200px]">Price</TableHead>
+                        <TableHead className="min-w-[100px]">Brand</TableHead>
+                        <TableHead className="min-w-[100px]">Stock</TableHead>
+                        <TableHead className="min-w-[150px]">Sold</TableHead>
+                        <TableHead className="min-w-[200px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {laptops
+                        .sort((a, b) => a.id - b.id)
+                        .map((laptop) => (
+                          <TableRow key={laptop.id}>
+                            <TableCell>{laptop.id}</TableCell>
+                            <TableCell>{laptop.name}</TableCell>
+                            <TableCell>{laptop.description}</TableCell>
+                            <TableCell>
+                              {" "}
+                              {laptop.price ? laptop.price.toFixed(2) : "N/A"}
+                            </TableCell>
+                            <TableCell>{laptop.brand}</TableCell>
+                            <TableCell>{laptop.stock}</TableCell>
+                            <TableCell>{laptop.sold}</TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditLaptop(laptop)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteLaptop(laptop)}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+            )}
+            {selectedTab === "orders" && (
+              <TabsContent value="orders" className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-semibold">Manage Orders</h2>
+                  <Button
+                    onClick={() => {
+                      const data = orders.map((order) => ({
+                        OrderID: order.id,
+                        Product: order.items
+                          .map((item) => item.name)
+                          .join(", "),
+                        Customer: order.customerName,
+                        Address: order.address,
+                        Total: order.total,
+                        Status: order.status,
+                        Date: order.date,
+                      }));
+
+                      const csvContent =
+                        "sep=,\r\n" +
+                        Object.keys(data[0]).join(",") +
+                        "\r\n" +
+                        data
+                          .map((row) => Object.values(row).join(","))
+                          .join("\r\n");
+
+                      const blob = new Blob([csvContent], {
+                        type: "application/vnd.ms-excel;charset=utf-8;",
+                      });
+
+                      const link = document.createElement("a");
+                      const url = URL.createObjectURL(blob);
+                      link.setAttribute("href", url);
+                      link.setAttribute("download", "orders.xls");
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                  >
+                    Download Orders Data
+                  </Button>
+                </div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[50px]">ID</TableHead>
+                        <TableHead className="min-w-[200px]">Product</TableHead>
+                        <TableHead className="min-w-[150px]">
+                          Customer
+                        </TableHead>
+                        <TableHead className="min-w-[200px]">Address</TableHead>
+                        <TableHead className="min-w-[100px]">Total</TableHead>
+                        <TableHead className="min-w-[100px]">Status</TableHead>
+                        <TableHead className="min-w-[150px]">Date</TableHead>
+                        <TableHead className="min-w-[200px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orders && orders.length > 0 ? (
+                        orders.map((order) => (
+                          <TableRow key={order.id}>
+                            <TableCell>{order.id}</TableCell>
+                            <TableCell>
+                              {order.items
+                                ?.map((item) => item.name)
+                                .join(", ") || "No items"}
+                            </TableCell>
+                            <TableCell>{order.customerName || "N/A"}</TableCell>
+                            <TableCell>{order.address || "N/A"}</TableCell>
+                            <TableCell>
+                              ₹{order.total?.toFixed(2) || "0.00"}
+                            </TableCell>
+                            <TableCell>
+                              <span
+                                className={`capitalize ${
+                                  order.status === "delivered"
+                                    ? "text-green-500"
+                                    : order.status === "shipped"
+                                    ? "text-blue-500"
+                                    : "text-yellow-500"
+                                }`}
+                              >
+                                {order.status || "pending"}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              {new Date(order.date).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                onValueChange={(value) =>
+                                  updateOrderStatus(
+                                    order.id.toString(),
+                                    value as "pending" | "shipped" | "delivered"
+                                  )
+                                }
+                              >
+                                <SelectTrigger className="w-[180px]">
+                                  <SelectValue placeholder="Update Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">
+                                    Pending
+                                  </SelectItem>
+                                  <SelectItem value="shipped">
+                                    Shipped
+                                  </SelectItem>
+                                  <SelectItem value="delivered">
+                                    Delivered
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteOrder(order)}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center">
+                            No orders found
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </TabsContent>
+            )}
+          </Tabs>
+
+          <Dialog open={isAdminDialogOpen} onOpenChange={setIsAdminDialogOpen}>
+            <DialogContent className="sm:max-w-[425px] bg-black/80 backdrop-blur-xl text-white border border-white/20">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
+                  {editingLaptop ? "Edit Laptop" : "Add New Laptop"}
+                </DialogTitle>
+              </DialogHeader>
+              <form
+                onSubmit={editingLaptop ? handleUpdateLaptop : handleAddLaptop}
+                className="space-y-4"
+              >
+                <div>
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    defaultValue={editingLaptop?.name}
+                    className="bg-white/10 border-white/20 text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    defaultValue={editingLaptop?.description}
+                    className="bg-white/10 border-white/20 text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="price">Price</Label>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingLaptop?.price}
+                    className="bg-white/10 border-white/20 text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="brand">Brand</Label>
+                  <Input
+                    id="brand"
+                    name="brand"
+                    defaultValue={editingLaptop?.brand}
+                    className="bg-white/10 border-white/20 text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="stock">Stock</Label>
+                  <Input
+                    id="stock"
+                    name="stock"
+                    type="number"
+                    defaultValue={editingLaptop?.stock}
+                    className="bg-white/10 border-white/20 text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="image">Image</Label>
+                  <Input
+                    id="image"
+                    name="image"
+                    type="string"
+                    defaultValue={editingLaptop?.image}
+                    className="bg-white/10 border-white/20 text-white"
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 hover:from-green-500 hover:via-blue-600 hover:to-purple-700 text-white"
+                >
+                  {editingLaptop ? "Update Laptop" : "Add Laptop"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </>
     );
   };
   const OrdersPage = () => {
-    const [customerName, setCustomerName] = useState(""); // Add this line
+    const [customerName, setCustomerName] = useState("");
     const [userOrders, setUserOrders] = useState<Order[]>([]);
-
-    useEffect(() => {
-      // Get customer name from localStorage or context
-      const user = localStorage.getItem("user");
-      if (user) {
-        const userData = JSON.parse(user);
-        setCustomerName(userData.displayName || "");
-      }
-    }, [customerName]);
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    const [newAddress, setNewAddress] = useState("");
+    const [isEditAddressDialogOpen, setIsEditAddressDialogOpen] =
+      useState(false);
 
     // Fetch user's orders when component mounts
 
     useEffect(() => {
       const fetchUserOrders = async () => {
         try {
+          // Get current user data
+          const user = localStorage.getItem("user");
+          if (!user) return;
+
+          const userData = JSON.parse(user);
+          const userName = userData.displayName || userData.name;
+          console.log("Current user:", userName);
+
           const ordersCollection = collection(db, "orders");
           const q = query(ordersCollection);
           const querySnapshot = await getDocs(q);
-          const ordersData = querySnapshot.docs.map(
-            (doc) =>
-              ({
-                ...doc.data(),
-                id: doc.id, // Make sure to include the document ID
-              } as Order)
-          );
+
+          // Filter orders for current user
+          const ordersData = querySnapshot.docs
+            .map(
+              (doc) =>
+                ({
+                  ...doc.data(),
+                  id: doc.id,
+                } as Order)
+            )
+            .filter((order) => order.customerName === userName);
+
+          console.log("Filtered orders:", ordersData);
           setUserOrders(ordersData);
         } catch (error) {
           console.error("Error fetching orders:", error);
@@ -2329,7 +2360,7 @@ const [userData, setUserData] = useState({
       };
 
       fetchUserOrders();
-    }, []); // Remove customerName from dependency array since it's not needed
+    }, []); // Empty dependency array for single fetch
 
     // Handle address update
     const handleUpdateAddress = async () => {
