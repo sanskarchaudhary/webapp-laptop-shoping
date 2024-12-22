@@ -1493,7 +1493,16 @@ export default function TechreviveWithAdmin() {
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [customerName, setCustomerName] = useState("");
     const [address, setAddress] = useState("");
-
+const [userData, setUserData] = useState({
+  name: "",
+  email: "",
+  phone: "",
+  address: "",
+  city: "",
+  state: "",
+  zipCode: "",
+  location: "",
+});
     const handleSubmit: React.MouseEventHandler<HTMLButtonElement> = async (
       e
     ) => {
@@ -1577,7 +1586,44 @@ export default function TechreviveWithAdmin() {
       setCustomerName("");
       setAddress("");
     };
+  useEffect(() => {
+    // Get user data from localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setUserData((prev) => ({
+        ...prev,
+        name: user.displayName || "",
+        email: user.email || "",
+      }));
+    }
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=bf51ba192eef4f9ba8fe27c54ddedb65`
+          );
+          const data = await response.json();
+          const result = data.results[0];
 
+          if (result) {
+            const components = result.components;
+            setUserData((prev) => ({
+              ...prev,
+              address: components.road || "",
+              city: components.city || "",
+              state: components.state || "",
+              zipCode: components.postcode || "",
+              location: result.formatted,
+            }));
+          }
+        } catch (error) {
+          console.error("Error getting location details:", error);
+        }
+      });
+    }
+  }, []);
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
@@ -1592,19 +1638,31 @@ export default function TechreviveWithAdmin() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="first-name">First Name</Label>
+                    <Label htmlFor="name">Name</Label>
                     <Input
-                      id="first-name"
-                      type="text"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
+                      id="name"
+                      value={userData.name}
+                      onChange={(e) =>
+                        setUserData((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
                       className="bg-white/10 border-white/20 text-white"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="last-name">Last Name</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input
-                      id="last-name"
+                      id="email"
+                      type="email"
+                      value={userData.email}
+                      onChange={(e) =>
+                        setUserData((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
                       className="bg-white/10 border-white/20 text-white"
                     />
                   </div>
@@ -1613,8 +1671,13 @@ export default function TechreviveWithAdmin() {
                   <Label htmlFor="address">Address</Label>
                   <Input
                     id="address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    value={userData.address}
+                    onChange={(e) =>
+                      setUserData((prev) => ({
+                        ...prev,
+                        address: e.target.value,
+                      }))
+                    }
                     className="bg-white/10 border-white/20 text-white"
                   />
                 </div>
@@ -1623,13 +1686,56 @@ export default function TechreviveWithAdmin() {
                     <Label htmlFor="city">City</Label>
                     <Input
                       id="city"
+                      value={userData.city}
+                      onChange={(e) =>
+                        setUserData((prev) => ({
+                          ...prev,
+                          city: e.target.value,
+                        }))
+                      }
                       className="bg-white/10 border-white/20 text-white"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="zip">ZIP Code</Label>
+                    <Label htmlFor="state">State</Label>
                     <Input
-                      id="zip"
+                      id="state"
+                      value={userData.state}
+                      onChange={(e) =>
+                        setUserData((prev) => ({
+                          ...prev,
+                          state: e.target.value,
+                        }))
+                      }
+                      className="bg-white/10 border-white/20 text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="zipCode">ZIP Code</Label>
+                    <Input
+                      id="zipCode"
+                      value={userData.zipCode}
+                      onChange={(e) =>
+                        setUserData((prev) => ({
+                          ...prev,
+                          zipCode: e.target.value,
+                        }))
+                      }
+                      className="bg-white/10 border-white/20 text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={userData.phone}
+                      onChange={(e) =>
+                        setUserData((prev) => ({
+                          ...prev,
+                          phone: e.target.value,
+                        }))
+                      }
                       className="bg-white/10 border-white/20 text-white"
                     />
                   </div>
