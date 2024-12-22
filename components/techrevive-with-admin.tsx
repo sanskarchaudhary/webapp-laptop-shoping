@@ -103,6 +103,7 @@ type Order = {
   status: string;
   date: string;
   address: string;
+  customerEmail?: string; // Add this line and make it optional with ?
 };
 type Laptop = {
   firb_id: string;
@@ -1544,10 +1545,11 @@ export default function TechreviveWithAdmin() {
       console.log("Max ID:", maxId);
 
       const newOrder: Order = {
-        id: (maxId + 1).toString(), // Unique ID
+        id: (maxId + 1).toString(),
         customerName: userData.name,
         address: `${userData.address}, ${userData.city}, ${userData.state} ${userData.zipCode}`,
         items: cartItems,
+        customerEmail: userData.email, // Changed from email to customerEmail
         total: total,
         status: "pending",
         date: new Date().toString(),
