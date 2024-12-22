@@ -73,13 +73,11 @@ import {
   FacebookAuthProvider,
   User as FirebaseUser,
 } from "firebase/auth";
-
 interface User extends FirebaseUser {
   role?: string;
 }
 import { auth as Auth } from "firebase-admin";
 import { log } from "console";
-
 const firebaseConfig = {
   apiKey: "AIzaSyD6VqBgebj0bSsluFTDLarMPA1FMoimNOM",
   authDomain: "laptop-82612.firebaseapp.com",
@@ -89,17 +87,14 @@ const firebaseConfig = {
   appId: "1:452320341006:web:caeece44b7568ab486a05f",
   measurementId: "G-VP49R9R3FC",
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 interface CartItem {
   id: number;
   name: string;
   price: number;
   quantity: number;
 }
-
 type Order = {
   id: string;
   customerName: string;
@@ -109,7 +104,6 @@ type Order = {
   date: string;
   address: string;
 };
-
 type Laptop = {
   firb_id: string;
   id: any;
@@ -121,7 +115,6 @@ type Laptop = {
   stock: any;
   sold: any;
 };
-
 export default function TechreviveWithAdmin() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -139,7 +132,6 @@ export default function TechreviveWithAdmin() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [newAddress, setNewAddress] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   const updateQuantity = (id: number, change: number) => {
     setCartItems((items) =>
       items
@@ -184,10 +176,6 @@ export default function TechreviveWithAdmin() {
 
     fetchOrders();
   }, []);
-
-
-
-  // Fetch laptops from Firestore
   useEffect(() => {
     const fetchLaptops = async () => {
       try {
@@ -217,12 +205,10 @@ export default function TechreviveWithAdmin() {
 
     fetchLaptops();
   }, []);
-
   const totalPrice = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-
   const addToCart = (laptop: Laptop) => {
     const existingItem = cartItems.find((item) => item.id === laptop.id);
     if (existingItem) {
@@ -234,19 +220,15 @@ export default function TechreviveWithAdmin() {
       ]);
     }
   };
-
   const getTotalRevenue = () => {
     return laptops.reduce((sum, laptop) => sum + laptop.price * laptop.sold, 0);
   };
-
   const getTotalSold = () => {
     return laptops.reduce((sum, laptop) => sum + laptop.sold, 0);
   };
-
   const getTotalStock = () => {
     return laptops.reduce((sum, laptop) => sum + laptop.stock, 0);
   };
-
   const updateOrderStatus = async (
     orderId: string,
     newStatus: "pending" | "shipped" | "delivered"
@@ -264,7 +246,6 @@ export default function TechreviveWithAdmin() {
       console.error("Error updating order status: ", error); // Log any errors
     }
   };
-
   const handleDeleteOrder = async (order: Order) => {
     if (!order) {
       console.error("No order is being deleted.");
@@ -280,7 +261,6 @@ export default function TechreviveWithAdmin() {
       console.error("Error deleting order: ", error); // Log any errors
     }
   };
-
   const Header = () => {
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
@@ -1044,7 +1024,6 @@ export default function TechreviveWithAdmin() {
       </header>
     );
   };
-
   const Footer = () => (
     <footer className="bg-black/40 backdrop-blur-md py-8 mt-12 border-t border-white/10">
       <div className="container mx-auto px-4 text-center text-white/70">
@@ -1052,7 +1031,6 @@ export default function TechreviveWithAdmin() {
       </div>
     </footer>
   );
-
   const QuickView = ({
     laptop,
     onClose,
@@ -1095,7 +1073,6 @@ export default function TechreviveWithAdmin() {
       </DialogContent>
     </Dialog>
   );
-
   const HomePage = () => {
     const [searchLaptop, setSearchLaptop] = useState("");
 
@@ -1232,7 +1209,6 @@ export default function TechreviveWithAdmin() {
       </>
     );
   };
-
   const LaptopsPage = () => {
     const [searchLaptop, setSearchLaptop] = useState("");
     const [selectedBrand, setSelectedBrand] = useState("all");
@@ -1398,7 +1374,6 @@ export default function TechreviveWithAdmin() {
       </div>
     );
   };
-
   const AboutPage = () => (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
@@ -1442,7 +1417,6 @@ export default function TechreviveWithAdmin() {
       </div>
     </div>
   );
-
   const ContactPage = () => (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600">
@@ -1514,7 +1488,6 @@ export default function TechreviveWithAdmin() {
       </div>
     </div>
   );
-
   const CheckoutPage = () => {
     const [paymentMethod, setPaymentMethod] = useState("credit-card");
     const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -1739,7 +1712,6 @@ export default function TechreviveWithAdmin() {
       </div>
     );
   };
-
   const AdminPage = () => {
     const handleAddLaptop = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -2216,7 +2188,6 @@ export default function TechreviveWithAdmin() {
       </div>
     );
   };
-
   const OrdersPage = () => {
     const [customerName, setCustomerName] = useState(""); // Add this line
     const [userOrders, setUserOrders] = useState<Order[]>([]);
@@ -2412,9 +2383,7 @@ export default function TechreviveWithAdmin() {
       </div>
     );
   };
-
   const [userRole, setUserRole] = useState<string>("user");
-
   return (
     <div className="bg-[#0a0a0f] text-white min-h-screen relative overflow-hidden">
       <Header />
@@ -2431,11 +2400,9 @@ export default function TechreviveWithAdmin() {
     </div>
   );
 }
-
 function async(id: any) {
   throw new Error("Function not implemented.");
 }
-
 function createUserWithEmailAndPassword(
   auth: any,
   email: string,
@@ -2443,42 +2410,33 @@ function createUserWithEmailAndPassword(
 ) {
   throw new Error("Function not implemented.");
 }
-
 function signInWithEmailAndPassword(auth: any, email: any, password: any) {
   throw new Error("Function not implemented.");
 }
-
 function signInWithPopup(auth: any, provider: any) {
   throw new Error("Function not implemented.");
 }
-
 function setError(arg0: null) {
   throw new Error("Function not implemented.");
 }
-
 function getAuth() {
   throw new Error("Function not implemented.");
 }
-
 function updateProfile(user: any, arg1: { displayName: any }) {
   throw new Error("Function not implemented.");
 }
-
 function firebaseUpdateProfile(user: User, arg1: { displayName: string }) {
   throw new Error("Function not implemented.");
 }
-
 function firebaseSetDoc(
   arg0: any,
   arg1: { name: string; email: string; phone: string; createdAt: any }
 ) {
   throw new Error("Function not implemented.");
 }
-
 function firebaseDoc(db: any, arg1: string, uid: string): any {
   throw new Error("Function not implemented.");
 }
-
 function firebaseServerTimestamp() {
   throw new Error("Function not implemented.");
 }
@@ -2488,7 +2446,6 @@ function setAddress(arg0: string) {
 function setSelectedBrand(value: string) {
   throw new Error("Function not implemented.");
 }
-
 export const StaticComponent = () => {
   // component code
 };
