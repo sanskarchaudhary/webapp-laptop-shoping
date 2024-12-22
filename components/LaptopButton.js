@@ -9,7 +9,7 @@ export function LaptopButton({ laptop }) {
     navigate("/laptop-details", { state: { laptop } });
   };
 
-  return <button onClick={handleClick}>View Laptop Details</button>;
+  return <button onClick={handleClick}></button>;
 }
 
 export default LaptopButton;

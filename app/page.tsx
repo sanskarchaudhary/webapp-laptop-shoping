@@ -27,7 +27,7 @@ export default function Page() {
       <TechreviveWithAdmin />
       {typeof window !== "undefined" && (
         <Router>
-          <h1>Laptop Shop</h1>
+          <h1></h1>
           <LaptopButton laptop={LaptopDetails} />
           <Routes>
             <Route path="/" element={<Home />} />

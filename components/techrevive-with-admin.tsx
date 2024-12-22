@@ -100,15 +100,15 @@ interface CartItem {
   quantity: number;
 }
 
-interface Order {
-  id: number;
+type Order = {
+  id: string;
   customerName: string;
-  address: string;
   items: CartItem[];
   total: number;
-  status: "pending" | "shipped" | "delivered";
+  status: string;
   date: string;
-}
+  address: string;
+};
 
 type Laptop = {
   firb_id: string;
@@ -138,7 +138,7 @@ export default function TechreviveWithAdmin() {
   const [isEditAddressDialogOpen, setIsEditAddressDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [newAddress, setNewAddress] = useState("");
-  console.log("order page");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const updateQuantity = (id: number, change: number) => {
     setCartItems((items) =>
@@ -168,8 +168,29 @@ export default function TechreviveWithAdmin() {
     setOrders(ordersData);
   };
   useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const ordersCollection = collection(db, "orders");
+        const querySnapshot = await getDocs(ordersCollection);
+        const ordersData = querySnapshot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id,
+        })) as Order[];
+        console.log("Before setState:", ordersData); // First console
+        setOrders(ordersData);
+        console.log("Current orders state:", orders); // This won't show updated state immediately
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      }
+    };
+
     fetchOrders();
   }, []);
+
+  // Add this useEffect to track orders state changes
+  useEffect(() => {
+    console.log("Orders state updated:", orders);
+  }, [orders]);
 
   // Fetch laptops from Firestore
   useEffect(() => {
@@ -232,11 +253,11 @@ export default function TechreviveWithAdmin() {
   };
 
   const updateOrderStatus = async (
-    orderId: number,
+    orderId: string,
     newStatus: "pending" | "shipped" | "delivered"
   ) => {
     try {
-      const orderRef = doc(db, "orders", orderId.toString()); // Get the document reference
+      const orderRef = doc(db, "orders", orderId); // Get the document reference
       await updateDoc(orderRef, { status: newStatus }); // Update the status in Firestore
       setOrders(
         orders.map((order) =>
@@ -254,7 +275,7 @@ export default function TechreviveWithAdmin() {
       console.error("No order is being deleted.");
       return;
     }
-    const orderId = order.id.toString(); // Ensure orderId is a string
+    const orderId = order.id; // Ensure orderId is a string
     try {
       await deleteDoc(doc(db, "orders", orderId)); // Delete the order from Firestore
       // Update the local state by filtering out the deleted order
@@ -427,8 +448,6 @@ export default function TechreviveWithAdmin() {
     }
 
     useEffect(() => {
-      console.log("render");
-
       const user = localStorage.getItem("user");
       if (user) {
         setCurrentUser(JSON.parse(user));
@@ -445,17 +464,81 @@ export default function TechreviveWithAdmin() {
               variant="ghost"
               size="icon"
               className="md:hidden text-white hover:bg-white/10"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               <Menu className="h-6 w-6" />
-              <span className="sr-only">Menu</span>
             </Button>
             <button
               onClick={() => setCurrentPage("home")}
-              className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600"
+              className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-600"
             >
               PERFECT COMPUTING
             </button>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="absolute top-full left-0 right-0 bg-black/90 backdrop-blur-md p-4 space-y-2 md:hidden">
+              <button
+                onClick={() => {
+                  setCurrentPage("home");
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 hover:bg-white/10 rounded"
+              >
+                Home
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentPage("laptops");
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 hover:bg-white/10 rounded"
+              >
+                Laptops
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentPage("orders");
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 hover:bg-white/10 rounded"
+              >
+                Orders
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentPage("about");
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 hover:bg-white/10 rounded"
+              >
+                About
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentPage("contact");
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 hover:bg-white/10 rounded"
+              >
+                Contact
+              </button>
+              {currentUser?.role === "admin" && (
+                <button
+                  onClick={() => {
+                    setCurrentPage("admin");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 hover:bg-white/10 rounded"
+                >
+                  Admin
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-4">
             <button
               onClick={() => setCurrentPage("home")}
@@ -497,14 +580,15 @@ export default function TechreviveWithAdmin() {
               </button>
             )}
           </nav>
-          <div className="flex items-center space-x-4">
+
+          {/* Cart and User Icons */}
+          <div className="flex items-center space-x-2 md:space-x-4">
             <Button
               variant="ghost"
               size="icon"
               className="text-white hover:bg-white/10"
             >
-              <Search className="h-6 w-6" />
-              <span className="sr-only">Search</span>
+              <Search className="h-5 w-5 md:h-6 md:w-6" />
             </Button>
             <Dialog open={isCartOpen} onOpenChange={setIsCartOpen}>
               <DialogTrigger asChild>
@@ -587,7 +671,6 @@ export default function TechreviveWithAdmin() {
                 </Button>
               </DialogContent>
             </Dialog>
-            {/* this is for user auth */}
             <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>
               <DialogTrigger asChild>
                 <Button
@@ -1480,7 +1563,7 @@ export default function TechreviveWithAdmin() {
       console.log("Max ID:", maxId);
 
       const newOrder: Order = {
-        id: maxId + 1, // Set the new ID
+        id: (maxId + 1).toString(), // Convert number to string
         customerName: customerName,
         address: address,
         items: cartItems,
@@ -1680,8 +1763,6 @@ export default function TechreviveWithAdmin() {
         firb_id: "",
       };
 
-      console.log(newLaptop);
-
       try {
         const docRef = await addDoc(collection(db, "laptops"), newLaptop);
         console.log("Document written with ID: ", docRef.id);
@@ -1770,9 +1851,9 @@ export default function TechreviveWithAdmin() {
         console.error("No order is being deleted.");
         return;
       }
-      const orderId = order.id.toString(); // Ensure orderId is a string
+      const orderId = order.id; // Ensure orderId is a string
       try {
-        await deleteDoc(doc(db, "orders", orderId)); // Delete the order from Firestore
+        await deleteDoc(doc(db, "orders", orderId));
         // Update the local state by filtering out the deleted order
         setOrders(orders.filter((ord) => ord.id !== order.id));
         console.log("Order document deleted successfully");
@@ -1787,31 +1868,26 @@ export default function TechreviveWithAdmin() {
       // Function to update selectedTab on switch");
       setSelectedTab(tabValue);
     };
+    console.log("this is laptopsCollection", laptops);
 
     useEffect(() => {
       const fetchUserOrders = async () => {
-        try {          
+        try {
           const ordersCollection = collection(db, "orders");
-          const q = query(
-            ordersCollection,
-          );
+          const q = query(ordersCollection);
           const querySnapshot = await getDocs(q);
-          const ordersData = querySnapshot.docs.map(
-            (doc) => doc.data() as Order
-          );
-          console.log(ordersData);
-        } catch (error) {
-          console.error("Error fetching orders:", error);
-        }
+          const orders = querySnapshot.docs.map((doc) => doc.data() as Order);
+          console.log("this is orders", orders);
+        } catch (error) {}
       };
 
       fetchUserOrders();
     });
+    console.log("this is orders", orders);
+
     const totalRevenue = getTotalRevenue();
     const totalSold = getTotalSold();
     const totalStock = getTotalStock();
-    console.log(orders);
-
     const safeTotalRevenue = isNaN(totalRevenue)
       ? "N/A"
       : totalRevenue.toString();
@@ -1882,54 +1958,58 @@ export default function TechreviveWithAdmin() {
                   Add New Laptop
                 </Button>
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Brand</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead>Sold</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {laptops
-                    .sort((a, b) => a.id - b.id)
-                    .map((laptop) => (
-                      <TableRow key={laptop.id}>
-                        <TableCell>{laptop.id}</TableCell>
-                        <TableCell>{laptop.name}</TableCell>
-                        <TableCell>{laptop.description}</TableCell>
-                        <TableCell>
-                          {" "}
-                          ₹{laptop.price ? laptop.price.toFixed(2) : "N/A"}
-                        </TableCell>
-                        <TableCell>{laptop.brand}</TableCell>
-                        <TableCell>{laptop.stock}</TableCell>
-                        <TableCell>{laptop.sold}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditLaptop(laptop)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteLaptop(laptop)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">ID</TableHead>
+                      <TableHead className="min-w-[200px]">Product</TableHead>
+                      <TableHead className="min-w-[150px]">
+                        Description
+                      </TableHead>
+                      <TableHead className="min-w-[200px]">Price</TableHead>
+                      <TableHead className="min-w-[100px]">Brand</TableHead>
+                      <TableHead className="min-w-[100px]">Stock</TableHead>
+                      <TableHead className="min-w-[150px]">Sold</TableHead>
+                      <TableHead className="min-w-[200px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {laptops
+                      .sort((a, b) => a.id - b.id)
+                      .map((laptop) => (
+                        <TableRow key={laptop.id}>
+                          <TableCell>{laptop.id}</TableCell>
+                          <TableCell>{laptop.name}</TableCell>
+                          <TableCell>{laptop.description}</TableCell>
+                          <TableCell>
+                            {" "}
+                            {laptop.price ? laptop.price.toFixed(2) : "N/A"}
+                          </TableCell>
+                          <TableCell>{laptop.brand}</TableCell>
+                          <TableCell>{laptop.stock}</TableCell>
+                          <TableCell>{laptop.sold}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditLaptop(laptop)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteLaptop(laptop)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
             </TabsContent>
           )}
           {selectedTab === "orders" && (
@@ -1938,14 +2018,14 @@ export default function TechreviveWithAdmin() {
                 <h2 className="text-2xl font-semibold">Manage Orders</h2>
                 <Button
                   onClick={() => {
-                    const data = orders.map((order) => ({
-                      OrderID: order.id,
-                      Product: order.items.map((item) => item.name).join(", "),
-                      Customer: order.customerName,
-                      Address: order.address,
-                      Total: order.total,
-                      Status: order.status,
-                      Date: order.date,
+                    const data = orders.map((orders) => ({
+                      OrderID: orders.id,
+                      Product: orders.items.map((item) => item.name).join(", "),
+                      Customer: orders.customerName,
+                      Address: orders.address,
+                      Total: orders.total,
+                      Status: orders.status,
+                      Date: orders.date,
                     }));
                     const csvContent =
                       "sep=,\r\n" +
@@ -1969,66 +2049,90 @@ export default function TechreviveWithAdmin() {
                   Download Orders Data
                 </Button>
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Address</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orders
-                    .sort((a, b) => a.id - b.id)
-                    .map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell>{order.id}</TableCell>
-                        <TableCell>
-                          {order.items.map((item) => item.name).join(", ")}
-                        </TableCell>
-                        <TableCell>{order.customerName}</TableCell>
-                        <TableCell>{order.address}</TableCell>
-                        <TableCell>₹{order.total}</TableCell>
-                        <TableCell>{order.status}</TableCell>
-                        <TableCell>{order.date}</TableCell>
-                        <TableCell>
-                          <Select
-                            onValueChange={(value) =>
-                              updateOrderStatus(
-                                order.id,
-                                value as "pending" | "shipped" | "delivered"
-                              )
-                            }
-                          >
-                            <SelectTrigger className="w-[180px]">
-                              <SelectValue placeholder="Update Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="shipped">Shipped</SelectItem>
-                              <SelectItem value="delivered">
-                                Delivered
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <br />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteOrder(order)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">ID</TableHead>
+                      <TableHead className="min-w-[200px]">Product</TableHead>
+                      <TableHead className="min-w-[150px]">Customer</TableHead>
+                      <TableHead className="min-w-[200px]">Address</TableHead>
+                      <TableHead className="min-w-[100px]">Total</TableHead>
+                      <TableHead className="min-w-[100px]">Status</TableHead>
+                      <TableHead className="min-w-[150px]">Date</TableHead>
+                      <TableHead className="min-w-[200px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orders && orders.length > 0 ? (
+                      orders.map((order) => (
+                        <TableRow key={order.id}>
+                          <TableCell>{order.id}</TableCell>
+                          <TableCell>
+                            {order.items?.map((item) => item.name).join(", ") ||
+                              "No items"}
+                          </TableCell>
+                          <TableCell>{order.customerName || "N/A"}</TableCell>
+                          <TableCell>{order.address || "N/A"}</TableCell>
+                          <TableCell>
+                            ₹{order.total?.toFixed(2) || "0.00"}
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`capitalize ${
+                                order.status === "delivered"
+                                  ? "text-green-500"
+                                  : order.status === "shipped"
+                                  ? "text-blue-500"
+                                  : "text-yellow-500"
+                              }`}
+                            >
+                              {order.status || "pending"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(order.date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              onValueChange={(value) =>
+                                updateOrderStatus(
+                                  order.id.toString(),
+                                  value as "pending" | "shipped" | "delivered"
+                                )
+                              }
+                            >
+                              <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Update Status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="shipped">Shipped</SelectItem>
+                                <SelectItem value="delivered">
+                                  Delivered
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteOrder(order)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center">
+                          No orders found
                         </TableCell>
                       </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </TabsContent>
           )}
         </Tabs>
@@ -2138,16 +2242,18 @@ export default function TechreviveWithAdmin() {
 
     useEffect(() => {
       const fetchUserOrders = async () => {
-        try {          
+        try {
           const ordersCollection = collection(db, "orders");
-          const q = query(
-            ordersCollection,
-          );
+          const q = query(ordersCollection);
           const querySnapshot = await getDocs(q);
           const ordersData = querySnapshot.docs.map(
-            (doc) => doc.data() as Order
+            (doc) =>
+              ({
+                ...doc.data(),
+                id: doc.id, // Make sure to include the document ID
+              } as Order)
           );
-          console.log(ordersData);
+          console.log("Fetched orders:", ordersData);
           setUserOrders(ordersData);
         } catch (error) {
           console.error("Error fetching orders:", error);
@@ -2155,25 +2261,21 @@ export default function TechreviveWithAdmin() {
       };
 
       fetchUserOrders();
-    }, [customerName]);
+    }, []); // Remove customerName from dependency array since it's not needed
 
     // Handle address update
     const handleUpdateAddress = async () => {
       if (!selectedOrder || !newAddress) return;
 
       try {
-        const orderRef = doc(db, "orders", selectedOrder.id.toString());
+        const orderRef = doc(db, "orders", selectedOrder.id);
         await updateDoc(orderRef, {
           address: newAddress,
         });
 
         // Update local state
         setUserOrders((prevOrders) =>
-          prevOrders.map((order) =>
-            order.id === selectedOrder.id
-              ? { ...order, address: newAddress }
-              : order
-          )
+          prevOrders.filter((o) => o.id !== selectedOrder.id)
         );
 
         setIsEditAddressDialogOpen(false);
@@ -2192,7 +2294,7 @@ export default function TechreviveWithAdmin() {
       }
 
       try {
-        const orderRef = doc(db, "orders", order.id.toString());
+        const orderRef = doc(db, "orders", order.id);
         await deleteDoc(orderRef);
         setUserOrders((prevOrders) =>
           prevOrders.filter((o) => o.id !== order.id)
