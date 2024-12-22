@@ -361,7 +361,6 @@ export default function TechreviveWithAdmin() {
         const token = credential?.accessToken;
         // The signed-in user info.
         const user = result.user;
-        console.log("User signed in with Google:", user);
         setError(null);
         // Fetch the user document to get the role
         const db = getFirestore();
@@ -369,8 +368,6 @@ export default function TechreviveWithAdmin() {
         const userDocSnapshot = await getDoc(userDocRef);
         const userData = userDocSnapshot.data();
         const userWithRole = { ...user, role: userData?.role || "user" };
-        console.log("userWithRole", userWithRole.role);
-        console.log("userWithRole", userWithRole);
         setCurrentUser(userWithRole);
         localStorage.setItem("user", JSON.stringify(userWithRole));
         // You can add additional logic here, such as updating UI or redirecting the user
@@ -638,8 +635,14 @@ export default function TechreviveWithAdmin() {
                 <Button
                   className="w-full mt-4 bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 hover:from-green-500 hover:via-blue-600 hover:to-purple-700 text-white"
                   onClick={() => {
-                    setIsCartOpen(false);
-                    setCurrentPage("checkout");
+                    const user = localStorage.getItem("user");
+                    if (!user) {
+                      setIsCartOpen(false);
+                      setIsAuthOpen(true); // Open auth dialog if user is not logged in
+                    } else {
+                      setIsCartOpen(false);
+                      setCurrentPage("checkout");
+                    }
                   }}
                 >
                   Proceed to Checkout
@@ -2109,13 +2112,11 @@ export default function TechreviveWithAdmin() {
                         Date: order.date,
                       }));
 
-                      const csvContent =
-                        "sep=,\r\n" +
-                        Object.keys(data[0]).join(",") +
-                        "\r\n" +
-                        data
-                          .map((row) => Object.values(row).join(","))
-                          .join("\r\n");
+                      const csvContent = [
+                        "sep=,",
+                        Object.keys(data[0]).join(","),
+                        ...data.map((row) => Object.values(row).join(",")),
+                      ].join("\r\n");
 
                       const blob = new Blob([csvContent], {
                         type: "application/vnd.ms-excel;charset=utf-8;",
@@ -2335,7 +2336,6 @@ export default function TechreviveWithAdmin() {
 
           const userData = JSON.parse(user);
           const userName = userData.displayName || userData.name;
-          console.log("Current user:", userName);
 
           const ordersCollection = collection(db, "orders");
           const q = query(ordersCollection);
@@ -2351,8 +2351,6 @@ export default function TechreviveWithAdmin() {
                 } as Order)
             )
             .filter((order) => order.customerName === userName);
-
-          console.log("Filtered orders:", ordersData);
           setUserOrders(ordersData);
         } catch (error) {
           console.error("Error fetching orders:", error);
