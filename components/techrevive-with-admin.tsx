@@ -176,9 +176,7 @@ export default function TechreviveWithAdmin() {
           ...doc.data(),
           id: doc.id,
         })) as Order[];
-        console.log("Before setState:", ordersData); // First console
         setOrders(ordersData);
-        console.log("Current orders state:", orders); // This won't show updated state immediately
       } catch (error) {
         console.error("Error fetching orders:", error);
       }
@@ -187,10 +185,7 @@ export default function TechreviveWithAdmin() {
     fetchOrders();
   }, []);
 
-  // Add this useEffect to track orders state changes
-  useEffect(() => {
-    console.log("Orders state updated:", orders);
-  }, [orders]);
+
 
   // Fetch laptops from Firestore
   useEffect(() => {
@@ -1868,7 +1863,6 @@ export default function TechreviveWithAdmin() {
       // Function to update selectedTab on switch");
       setSelectedTab(tabValue);
     };
-    console.log("this is laptopsCollection", laptops);
 
     useEffect(() => {
       const fetchUserOrders = async () => {
@@ -1877,13 +1871,11 @@ export default function TechreviveWithAdmin() {
           const q = query(ordersCollection);
           const querySnapshot = await getDocs(q);
           const orders = querySnapshot.docs.map((doc) => doc.data() as Order);
-          console.log("this is orders", orders);
         } catch (error) {}
       };
 
       fetchUserOrders();
     });
-    console.log("this is orders", orders);
 
     const totalRevenue = getTotalRevenue();
     const totalSold = getTotalSold();
@@ -2253,7 +2245,6 @@ export default function TechreviveWithAdmin() {
                 id: doc.id, // Make sure to include the document ID
               } as Order)
           );
-          console.log("Fetched orders:", ordersData);
           setUserOrders(ordersData);
         } catch (error) {
           console.error("Error fetching orders:", error);
